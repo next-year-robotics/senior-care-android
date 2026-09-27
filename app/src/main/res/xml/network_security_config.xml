@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MVP는 개인 핫스팟 안의 ws:// 만 허용한다(PROTOCOL.md 2.3). 지도·검색 API는 https. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">mobile-robot.local</domain>
+        <domain includeSubdomains="false">rpi5.local</domain>
+        <domain includeSubdomains="false">10.0.0.1</domain>
+        <domain includeSubdomains="false">192.168.43.1</domain>
+    </domain-config>
+</network-security-config>

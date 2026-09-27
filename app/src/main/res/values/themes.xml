@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose 전용 앱. 창 배경만 브랜드 Cream으로 맞춘다. 실제 테마는 ui/theme/Theme.kt -->
+    <style name="Theme.SeniorCare" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#EEE8DF</item>
+        <item name="android:statusBarColor">#EEE8DF</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
