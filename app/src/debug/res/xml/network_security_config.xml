@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- debug 빌드 전용 덮어쓰기. main과 같고 localhost·127.0.0.1만 더한다.
+     개발 PC의 브리지에 `adb reverse tcp:8765 tcp:8765`로 붙을 때 쓴다(수동 연결 127.0.0.1:8765).
+     release 빌드는 main의 설정을 그대로 쓴다. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">mobile-robot.local</domain>
+        <domain includeSubdomains="false">rpi5.local</domain>
+        <domain includeSubdomains="false">10.0.0.1</domain>
+        <domain includeSubdomains="false">192.168.43.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>
