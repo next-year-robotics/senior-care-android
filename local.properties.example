@@ -1,0 +1,5 @@
+# 복사해서 local.properties 로 저장한다(gitignore 대상).
+sdk.dir=/home/emjdp/Android/Sdk
+# developers.kakao.com → 내 애플리케이션 → 앱 키. 없으면 dummy로 두면 지도만 꺼진 채 빌드된다.
+KAKAO_NATIVE_APP_KEY=dummy
+KAKAO_REST_API_KEY=dummy
