@@ -91,3 +91,12 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 }
+
+// External mock selection is part of the test input; switching scenarios must rerun tests.
+tasks.withType<Test>().configureEach {
+    listOf("BRIDGE_TEST_URL", "SOS_TEST_URL", "SOS_TEST_CLEAR", "MOCK_MATRIX_BASE_PORT").forEach { key ->
+        val value = providers.environmentVariable(key).orElse("")
+        inputs.property(key, value)
+        environment(key, value.get())
+    }
+}
