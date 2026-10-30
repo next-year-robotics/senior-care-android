@@ -20,8 +20,9 @@ class SessionRuntime(context: Context) {
     }
     val session = BridgeSession(scope, OkHttpTransportFactory(),
         NsdBridgeDiscovery(context.getSystemService(NsdManager::class.java), context.mainExecutor),
-        DataStoreConnectionSettings(context), BuildConfig.VERSION_NAME, clock, capabilities = listOf(com.nextyearrobotics.seniorcare.protocol.HelloCapabilities.LOCATION_CACHE, com.nextyearrobotics.seniorcare.protocol.HelloCapabilities.LOCATION_FRESH))
+        DataStoreConnectionSettings(context), BuildConfig.VERSION_NAME, clock, capabilities = listOf(com.nextyearrobotics.seniorcare.protocol.HelloCapabilities.LOCATION_CACHE, com.nextyearrobotics.seniorcare.protocol.HelloCapabilities.LOCATION_FRESH, com.nextyearrobotics.seniorcare.protocol.HelloCapabilities.PLACE_EDIT))
     val trip = TripRepository(session, scope, clock)
+    val places = com.nextyearrobotics.seniorcare.places.PlaceEditor(session, scope)
     val source: LocationSource = FusedLocationSource(context)
     val cache = LocationCache(clock)
     val notifications = SessionNotifications(context)

@@ -2,6 +2,10 @@ package com.nextyearrobotics.seniorcare
 
 import android.os.Bundle
 import android.net.Uri
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
 import android.content.Intent
@@ -32,10 +36,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val model: BridgeViewModel = viewModel()
+            val mapState by model.mapSelection.state.collectAsStateWithLifecycle()
+            val locating by model.locating.collectAsStateWithLifecycle()
+            val edit by model.places.state.collectAsStateWithLifecycle()
             val ui by model.trip.state.collectAsStateWithLifecycle()
             val sos by model.sos.state.collectAsStateWithLifecycle()
             val permissionProblem by model.permissionProblem.collectAsStateWithLifecycle()
             val connection by model.connection.collectAsStateWithLifecycle()
+            var connectionDialog by rememberSaveable { mutableStateOf(false) }
+            var mapInfo by remember { mutableStateOf(false) }
             var settings by rememberSaveable { mutableStateOf(false) }
             var permissionInfo by rememberSaveable { mutableStateOf(false) }
             var pendingEndpoint by rememberSaveable { mutableStateOf<String?>(null) }
@@ -48,23 +57,33 @@ class MainActivity : ComponentActivity() {
                 else permissionLauncher.launch(SessionPermissions.required())
             }
             LaunchedEffect(connection.needsEndpoint, connection.error) {
-                if (connection.needsEndpoint || connection.error != null) settings = true
+                if (connection.needsEndpoint || connection.error != null) { settings = true; connectionDialog = true }
             }
             LaunchedEffect(permissionProblem) { if (permissionProblem) permissionInfo = true }
             LaunchedEffect(Unit) { if (intent.getBooleanExtra("show_sos", false)) model.sos.reopen() }
             SeniorCareTheme {
-                BackHandler(ui.screen != Screen.HOME) { model.trip.back() }
+                BackHandler(settings || ui.screen != Screen.HOME) { if (mapInfo) { mapInfo = false; model.closeMap() } else if (settings) { if (edit.draft != null) model.places.close() else settings = false } else model.trip.back() }
                 Column(Modifier.fillMaxSize().statusBarsPadding()) {
                 if (sos.isNotEmpty()) SosBanner { model.sos.reopen() }
                 Box(Modifier.weight(1f)) {
-                when (ui.screen) {
+                if (mapInfo) MapPickerScreen(model.mapSelection, mapState, model.mapPicker, model.canLocate(), locating, model::locate,
+                    { edit.draft?.let { model.mapSelection.apply(it)?.let(model.places::update) }; mapInfo = false; model.closeMap() },
+                    { mapInfo = false; model.closeMap() })
+                else if (settings) SettingsScreen(connection, model.places, edit, permissionSummary(),
+                    { connectionDialog = true },
+                    { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) },
+                    { val summary = getString(R.string.diagnostics_summary, BuildConfig.VERSION_NAME, "1", connection.hello?.serverVersion ?: "—", connection.catalog?.revision ?: "—")
+                      startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, summary), getString(R.string.diagnostics_export))) },
+                    { (application as SeniorCareApp).runtime.notifications.testAlert() },
+                    { edit.draft?.let { model.mapSelection.open(it); mapInfo = true } }, { settings = false })
+                else when (ui.screen) {
                     Screen.HOME -> HomeScreen(ui.app, model.trip::select, { connect(null) }, { settings = true }, model.trip::chooseOrigin)
                     Screen.ORIGIN -> HomeScreen(ui.app, model.trip::setOrigin, { connect(null) }, { settings = true }, model.trip::back)
                     Screen.CONFIRM, Screen.TRIP -> TripScreen(ui, ui.screen == Screen.CONFIRM, model.trip::startTrip, model.trip::cancelTrip, model.trip::back)
                 }
                 }
                 }
-                if (settings) ConnectionDialog(connection, connect, model::disconnect) { settings = false }
+                if (connectionDialog) ConnectionDialog(connection, connect, model::disconnect) { connectionDialog = false }
                 if (permissionInfo) AlertDialog(onDismissRequest = { permissionInfo = false }, title = { Text(stringResource(R.string.permissions_title)) }, text = { Column { Text(stringResource(R.string.permissions_explanation)); TextButton(onClick = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }) { Text(stringResource(R.string.permissions_app_settings)) }; TextButton(onClick = { permissionInfo = false; permissionLauncher.launch(SessionPermissions.required()) }) { Text(stringResource(R.string.permissions_retry)) } } },
                     confirmButton = { TextButton(onClick = { permissionInfo = false; startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }) { Text(stringResource(R.string.permissions_settings)) } },
                     dismissButton = { TextButton(onClick = { permissionInfo = false }) { Text(stringResource(R.string.action_back)) } })
@@ -82,4 +101,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    private fun permissionSummary(): String {
+        fun label(value: Boolean) = getString(if (value) R.string.permission_allowed else R.string.permission_denied)
+        fun granted(permission: String) = ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+        return getString(R.string.permission_status, label(granted(Manifest.permission.ACCESS_COARSE_LOCATION)),
+            label(granted(Manifest.permission.ACCESS_FINE_LOCATION)), label(granted(Manifest.permission.POST_NOTIFICATIONS)),
+            label(getSystemService(LocationManager::class.java).isLocationEnabled))
+    }
+
 }
