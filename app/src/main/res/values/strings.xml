@@ -62,4 +62,67 @@
     <string name="permissions_app_settings">앱 권한 설정 열기</string>
     <string name="permissions_retry">권한 다시 요청</string>
     <string name="connection_update_required">앱과 로봇의 버전이 맞지 않아요. 업데이트가 필요합니다.</string>
+    <string name="settings_title">설정</string>
+    <string name="place_list">장소 프리셋 관리</string>
+    <string name="place_edit">장소 편집</string>
+    <string name="place_add">장소 추가</string>
+    <string name="place_label">이름 (최대 20자)</string>
+    <string name="place_latitude">위도</string>
+    <string name="place_longitude">경도</string>
+    <string name="place_map">지도에서 위치 지정</string>
+    <string name="place_radius">반경 %1$d m</string>
+    <string name="place_order">표시 순서 (작은 수부터)</string>
+    <string name="place_enabled">사용</string>
+    <string name="place_default_origin">기본 출발지</string>
+    <string name="place_origin_suffix"> · 기본 출발지</string>
+    <string name="place_edit_disabled">연결 상태와 주행 종료를 확인해 주세요. 로봇이 편집을 허용할 때 저장할 수 있어요.</string>
+    <string name="place_delete_confirm">이 장소를 삭제할까요?</string>
+    <string name="place_default_delete">다른 장소를 기본 출발지로 지정한 뒤 삭제해 주세요</string>
+    <string name="place_saved">장소 목록에 반영했어요</string>
+    <string name="place_invalid">이름·좌표·반경·순서를 확인해 주세요</string>
+    <string name="place_conflict">목록이 바뀌었어요. 최신 값으로 다시 불러온 뒤 수정해 주세요.</string>
+    <string name="place_reload">최신 값 다시 불러오기</string>
+    <string name="place_limit">장소가 가득 찼어요. 사용하지 않는 장소를 삭제해 주세요.</string>
+    <string name="place_in_use">주행에 사용 중인 장소입니다. 주행이 끝난 뒤 수정해 주세요.</string>
+    <string name="action_save">저장</string>
+    <string name="action_delete">삭제</string>
+    <string name="kind_home">집</string>
+    <string name="kind_market">시장</string>
+    <string name="kind_mart">마트</string>
+    <string name="kind_senior_center">노인정</string>
+    <string name="kind_church">교회</string>
+    <string name="kind_temple">절</string>
+    <string name="kind_hospital">병원</string>
+    <string name="kind_pharmacy">약국</string>
+    <string name="kind_other">장소</string>
+    <string name="settings_alert_test">SOS 알림·진동 확인</string>
+    <string name="settings_preview">화면 크기 미리보기</string>
+    <string name="settings_preview_notice">현재 시스템 글꼴 크기로 표시합니다</string>
+    <string name="settings_diagnostics">정보·진단</string>
+    <string name="diagnostics_summary">앱 %1$s
+프로토콜 %2$s
+서버 %3$s
+장소 목록 %4$s</string>
+    <string name="diagnostics_export">진단 정보 공유 (좌표 제외)</string>
+    <string name="permission_status">위치: %1$s
+정확한 위치: %2$s
+알림: %3$s
+위치 서비스: %4$s</string>
+    <string name="permission_allowed">허용</string>
+    <string name="permission_denied">허용 안 됨</string>
+    <string name="map_pending">지도 기능을 준비하고 있습니다. 좌표를 직접 입력할 수 있어요.</string>
+    <string name="settings_alert_test_notice">알림 시험입니다. 로봇에 긴급 요청을 보내지 않습니다.</string>
+    <string name="map_search_hint">장소나 주소를 검색하세요</string>
+    <string name="map_search">검색</string>
+    <string name="map_search_failed">검색할 수 없어요. 지도 중앙 핀으로 지정해 주세요.</string>
+    <string name="map_center_pin">지도 중앙의 선택 위치</string>
+    <string name="map_current">내 위치</string>
+    <string name="map_location_unavailable">위치 권한과 기기의 위치 설정이 필요해요</string>
+    <string name="map_manual">좌표 직접 입력</string>
+    <string name="map_unavailable">위도·경도로 위치를 지정해 주세요</string>
+    <string name="map_selected_coordinates">선택 위치: 위도 %1$.6f, 경도 %2$.6f</string>
+    <string name="map_choose">위치를 선택해 주세요</string>
+    <string name="map_apply">이 위치로 지정</string>
+    <string name="settings_preview_double">글자 200% 미리보기</string>
+    <string name="settings_preview_local">화면 시험입니다. 로봇에 명령을 보내지 않습니다.</string>
 </resources>

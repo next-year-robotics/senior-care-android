@@ -216,6 +216,32 @@ class BridgeSessionTest {
         assertEquals(2, t.sent.count { it.payload is SosAck })
         session.stop(); trip.await()
     }
+    @Test fun placeEditorWaitsForCatalogRejectsDuplicateSaveAndDefaultDelete() = runTest {
+        val (session, transports) = setup()
+        val t = ready(session, transports)
+        val editor = com.nextyearrobotics.seniorcare.places.PlaceEditor(session, backgroundScope)
+        editor.open("place_market")
+        editor.update(editor.state.value.draft!!.copy(label = "수정한 시장"))
+        editor.save(); editor.save(); runCurrent()
+        assertEquals(1, t.sent.count { it.payload is PlaceUpsert })
+        val request = t.sent.last()
+        val catalog = session.state.value.catalog!!
+        val next = catalog.copy(revision = "2026-09-27T12:00:01Z", places = catalog.places.map { if (it.id == "place_market") it.copy(label = "수정한 시장") else it })
+        t.deliver(Ack(AckStatus.ACCEPTED, catalogRevision = next.revision), request.envelope.id); runCurrent()
+        assertTrue(editor.state.value.busy)
+        t.deliver(next); runCurrent()
+        assertEquals(com.nextyearrobotics.seniorcare.places.EditNotice.SAVED, editor.state.value.notice)
+        assertNull(editor.state.value.draft)
+        editor.open("place_home"); editor.delete(); runCurrent()
+        assertEquals(com.nextyearrobotics.seniorcare.places.EditNotice.DEFAULT_ORIGIN, editor.state.value.notice)
+        assertTrue(t.sent.none { it.payload is PlaceDelete })
+        editor.open("place_market")
+        t.deliver(next.copy(revision = "2026-09-27T12:00:02Z")); runCurrent()
+        editor.save(); runCurrent()
+        assertEquals(com.nextyearrobotics.seniorcare.places.EditNotice.CONFLICT, editor.state.value.notice)
+        assertEquals(1, t.sent.count { it.payload is PlaceUpsert })
+        session.stop()
+    }
     @Test fun backoffCapsAndJitterBounds() {
         val center = ReconnectBackoff { .5 }
         assertEquals(listOf(1000L, 2000, 4000, 8000, 10000, 10000), List(6) { center.nextMs() })

@@ -40,5 +40,11 @@ class SessionNotifications(private val context: Context) : SosAlerts {
         try { manager.notify(state.request.sosId, SOS_ID, notification) } catch (_: SecurityException) { /* In-app SOS and ACK remain active. */ }
     }
     override fun clear(id: String) { manager.cancel(id, SOS_ID) }
+    fun testAlert() {
+        val notification = NotificationCompat.Builder(context, SOS).setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle(context.getString(R.string.settings_alert_test)).setContentText(context.getString(R.string.settings_alert_test_notice))
+            .setContentIntent(open()).setAutoCancel(true).setTimeoutAfter(10_000).build()
+        try { manager.notify(3, notification) } catch (_: SecurityException) { }
+    }
     companion object { const val CONNECTION_ID = 1; const val SOS_ID = 2; const val CONNECTION = "connection"; const val SOS = "sos" }
 }

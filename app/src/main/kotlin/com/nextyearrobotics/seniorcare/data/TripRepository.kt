@@ -33,10 +33,12 @@ class TripRepository(private val session: BridgeSession, private val scope: Coro
                 app = app.copy(connection = current.connection)
                 if (current.catalog != null && current.catalog != catalog) {
                     val before = app.destinationId
+                    val followsDefault = app.originId == catalog?.defaultOriginPlaceId
                     catalog = current.catalog
                     app = reduce(app, AppEvent.Catalog(current.catalog.places.map {
                         Destination(it.id, it.kind.wire, it.label, it.enabled, it.sortOrder)
                     }, current.catalog.defaultOriginPlaceId))
+                    if (followsDefault) app = app.copy(originId = current.catalog.defaultOriginPlaceId)
                     if (before != null && app.destinationId == null && ui.screen == TripScreen.CONFIRM)
                         ui = ui.copy(screen = TripScreen.HOME, notice = TripNotice.SELECTION_CHANGED)
                 }
