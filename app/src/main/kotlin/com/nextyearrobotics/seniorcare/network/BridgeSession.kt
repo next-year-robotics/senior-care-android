@@ -53,7 +53,7 @@ class BridgeSession(
     private val lifecycle = Mutex()
 
     suspend fun start(endpoint: String? = null) = lifecycle.withLock {
-        val valid = endpoint?.let(Endpoint::validate)
+        val valid = endpoint?.let { Endpoint.validate(it) }
         stopInternal()
         backoff.reset()
         job = scope.launch { runLoop(valid) }
