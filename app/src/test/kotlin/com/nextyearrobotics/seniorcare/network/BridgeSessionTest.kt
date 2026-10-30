@@ -196,6 +196,26 @@ class BridgeSessionTest {
         assertEquals(TripScreen.HOME, repository.state.value.screen)
         session.stop()
     }
+    @Test fun urgentSosDuringSyncAndBlockedCommandAckIsNotRequired() = runTest {
+        val (session, transports) = setup()
+        session.onSos = { message ->
+            val request = message.payload as SosRequest
+            session.sendUrgent(SosAck(request.sosId, true), message.envelope.id)
+            session.sendUrgent((fixture("location-none") as LocationUpdate).copy(sosId = request.sosId))
+        }
+        session.start("ws://127.0.0.1:8765/bridge/v1"); runCurrent()
+        val t = transports.single(); t.events.send(SocketEvent.Open); runCurrent()
+        t.deliver(fixture("hello-ack"), t.sent.single().envelope.id); runCurrent()
+        t.deliver(fixture("sos-request")); runCurrent()
+        assertEquals(Connection.SYNCING, session.state.value.connection)
+        assertEquals(listOf("sos.ack", "location.update"), t.sent.takeLast(2).map { it.envelope.type })
+        t.deliver(fixture("place-catalog-default6")); t.deliver(fixture("robot-status-idle")); runCurrent()
+        val trip = async { session.request(fixture("trip-start")) }; runCurrent()
+        t.deliver(fixture("sos-request")); runCurrent()
+        assertFalse(trip.isCompleted)
+        assertEquals(2, t.sent.count { it.payload is SosAck })
+        session.stop(); trip.await()
+    }
     @Test fun backoffCapsAndJitterBounds() {
         val center = ReconnectBackoff { .5 }
         assertEquals(listOf(1000L, 2000, 4000, 8000, 10000, 10000), List(6) { center.nextMs() })

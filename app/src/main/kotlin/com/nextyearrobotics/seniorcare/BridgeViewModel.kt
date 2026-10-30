@@ -1,21 +1,26 @@
 package com.nextyearrobotics.seniorcare
 
 import android.app.Application
-import android.net.nsd.NsdManager
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.nextyearrobotics.seniorcare.data.DataStoreConnectionSettings
-import com.nextyearrobotics.seniorcare.data.TripRepository
-import com.nextyearrobotics.seniorcare.network.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.MutableStateFlow
+import com.nextyearrobotics.seniorcare.service.BridgeService
 
-/** Foreground development session. M1-7 will move ownership into the location FGS. */
 class BridgeViewModel(application: Application) : AndroidViewModel(application) {
-    private val settings = DataStoreConnectionSettings(application)
-    private val session = BridgeSession(viewModelScope, OkHttpTransportFactory(),
-        NsdBridgeDiscovery(application.getSystemService(NsdManager::class.java), application.mainExecutor), settings, BuildConfig.VERSION_NAME)
-    val trip = TripRepository(session, viewModelScope)
-    val connection = session.state
-    fun connect(endpoint: String? = null) { viewModelScope.launch { session.start(endpoint) } }
-    fun disconnect() { viewModelScope.launch { session.stop() } }
+    private val runtime = (application as SeniorCareApp).runtime
+    val trip = runtime.trip
+    val connection = runtime.session.state
+    val sos = runtime.sos
+    val permissionProblem = runtime.permissionProblem
+    fun connect(endpoint: String? = null) {
+        try {
+            ContextCompat.startForegroundService(getApplication(), Intent(getApplication(), BridgeService::class.java).putExtra("endpoint", endpoint))
+        } catch (_: IllegalStateException) { permissionProblem.value = true
+        } catch (_: SecurityException) { permissionProblem.value = true }
+    }
+    fun disconnect() { getApplication<Application>().stopService(Intent(getApplication(), BridgeService::class.java)) }
 }

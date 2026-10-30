@@ -1,6 +1,9 @@
 package com.nextyearrobotics.seniorcare
 
 import android.os.Bundle
+import android.net.Uri
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Modifier
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -21,11 +24,17 @@ import com.nextyearrobotics.seniorcare.ui.*
 import com.nextyearrobotics.seniorcare.ui.theme.SeniorCareTheme
 
 class MainActivity : ComponentActivity() {
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra("show_sos", false)) (application as SeniorCareApp).runtime.sos.reopen()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val model: BridgeViewModel = viewModel()
             val ui by model.trip.state.collectAsStateWithLifecycle()
+            val sos by model.sos.state.collectAsStateWithLifecycle()
+            val permissionProblem by model.permissionProblem.collectAsStateWithLifecycle()
             val connection by model.connection.collectAsStateWithLifecycle()
             var settings by rememberSaveable { mutableStateOf(false) }
             var permissionInfo by rememberSaveable { mutableStateOf(false) }
@@ -41,15 +50,22 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(connection.needsEndpoint, connection.error) {
                 if (connection.needsEndpoint || connection.error != null) settings = true
             }
+            LaunchedEffect(permissionProblem) { if (permissionProblem) permissionInfo = true }
+            LaunchedEffect(Unit) { if (intent.getBooleanExtra("show_sos", false)) model.sos.reopen() }
             SeniorCareTheme {
                 BackHandler(ui.screen != Screen.HOME) { model.trip.back() }
+                Column(Modifier.fillMaxSize().statusBarsPadding()) {
+                if (sos.isNotEmpty()) SosBanner { model.sos.reopen() }
+                Box(Modifier.weight(1f)) {
                 when (ui.screen) {
                     Screen.HOME -> HomeScreen(ui.app, model.trip::select, { connect(null) }, { settings = true }, model.trip::chooseOrigin)
                     Screen.ORIGIN -> HomeScreen(ui.app, model.trip::setOrigin, { connect(null) }, { settings = true }, model.trip::back)
                     Screen.CONFIRM, Screen.TRIP -> TripScreen(ui, ui.screen == Screen.CONFIRM, model.trip::startTrip, model.trip::cancelTrip, model.trip::back)
                 }
+                }
+                }
                 if (settings) ConnectionDialog(connection, connect, model::disconnect) { settings = false }
-                if (permissionInfo) AlertDialog(onDismissRequest = { permissionInfo = false }, title = { Text(stringResource(R.string.permissions_title)) }, text = { Text(stringResource(R.string.permissions_explanation)) },
+                if (permissionInfo) AlertDialog(onDismissRequest = { permissionInfo = false }, title = { Text(stringResource(R.string.permissions_title)) }, text = { Column { Text(stringResource(R.string.permissions_explanation)); TextButton(onClick = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }) { Text(stringResource(R.string.permissions_app_settings)) }; TextButton(onClick = { permissionInfo = false; permissionLauncher.launch(SessionPermissions.required()) }) { Text(stringResource(R.string.permissions_retry)) } } },
                     confirmButton = { TextButton(onClick = { permissionInfo = false; startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }) { Text(stringResource(R.string.permissions_settings)) } },
                     dismissButton = { TextButton(onClick = { permissionInfo = false }) { Text(stringResource(R.string.action_back)) } })
                 if (ui.notice != TripNotice.NONE) AlertDialog(onDismissRequest = model.trip::dismissNotice,
@@ -60,6 +76,9 @@ class MainActivity : ComponentActivity() {
                         TripNotice.CATALOG_CHANGED -> R.string.trip_catalog_changed
                         else -> R.string.trip_rejected
                     })) }, confirmButton = { TextButton(onClick = model.trip::dismissNotice) { Text(stringResource(R.string.action_acknowledge)) } })
+                sos.values.firstOrNull { !it.dismissed }?.let { active ->
+                    SosOverlay(active, { model.sos.dismiss(active.request.sosId) }, { model.sos.dismiss(active.request.sosId); settings = true })
+                }
             }
         }
     }

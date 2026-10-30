@@ -41,6 +41,7 @@ class BridgeSession(
     private val appVersion: String,
     private val clock: Clock = SystemClock,
     private val backoff: ReconnectBackoff = ReconnectBackoff(),
+    private val capabilities: List<HelloCapabilities> = emptyList(),
 ) {
     private val mutableState = MutableStateFlow(SessionState())
     val state = mutableState.asStateFlow()
@@ -48,6 +49,15 @@ class BridgeSession(
     val messages = mutableMessages.asSharedFlow()
     private data class Request(val payload: Payload, val replyTo: String?, val result: CompletableDeferred<CommandResult>)
     private val requests = Channel<Request>(16)
+    private val urgent = Channel<Request>(64)
+    var onSos: ((Message) -> Unit)? = null
+    fun sendUrgent(payload: Payload, replyTo: String? = null, delivered: (Boolean) -> Unit = {}) {
+        require(payload is SosAck || payload is LocationUpdate)
+        val result = CompletableDeferred<CommandResult>()
+        if (state.value.hello == null || state.value.connection !in listOf(Connection.READY, Connection.SYNCING) ||
+            urgent.trySend(Request(payload, replyTo, result)).isFailure) { delivered(false); return }
+        scope.launch { delivered(result.await() is CommandResult.Accepted) }
+    }
     private val history = MessageHistory(clock)
     private var job: Job? = null
     private val lifecycle = Mutex()
@@ -71,7 +81,9 @@ class BridgeSession(
         if (requests.trySend(Request(payload, replyTo, result)).isFailure) return CommandResult.NotConnected
         return try { result.await() } finally { if (!result.isCompleted) result.cancel() }
     }
-    private fun drainRequests() { while (true) (requests.tryReceive().getOrNull() ?: break).result.complete(CommandResult.NotConnected) }
+    private fun drainRequests() {
+        for (channel in listOf(urgent, requests)) while (true) (channel.tryReceive().getOrNull() ?: break).result.complete(CommandResult.NotConnected)
+    }
 
     private suspend fun runLoop(explicit: String?) {
         var endpoint = explicit ?: settings.lastEndpoint()
@@ -130,6 +142,7 @@ class BridgeSession(
             while (currentCoroutineContext().isActive) {
                 val input = withTimeoutOrNull(100) {
                     select<Input> {
+                        urgent.onReceive { Input.Command(it) }
                         transport.events.onReceiveCatching { Input.Socket(it.getOrNull()) }
                         requests.onReceive { Input.Command(it) }
                     }
@@ -138,7 +151,7 @@ class BridgeSession(
                 mutableState.value = state.value.copy(nowMs = now)
                 when (input) {
                     is Input.Command -> {
-                        if (state.value.connection != Connection.READY || input.request.result.isCancelled) input.request.result.complete(CommandResult.NotConnected)
+                        if ((state.value.connection != Connection.READY && !(hello != null && (input.request.payload is SosAck || input.request.payload is LocationUpdate))) || input.request.result.isCancelled) input.request.result.complete(CommandResult.NotConnected)
                         else {
                             try {
                                 val e = send(input.request.payload, input.request.replyTo)
@@ -150,7 +163,7 @@ class BridgeSession(
                     }
                     is Input.Socket -> when (val event = input.event) {
                         SocketEvent.Open -> {
-                            helloId = send(Hello(instance, appVersion, HelloPlatform.ANDROID, emptyList())).id
+                            helloId = send(Hello(instance, appVersion, HelloPlatform.ANDROID, capabilities)).id
                             mutableState.value = state.value.copy(connection = Connection.SYNCING)
                         }
                         is SocketEvent.Text -> {
@@ -191,7 +204,7 @@ class BridgeSession(
                                 }
                                 is Ack -> pending.remove(env.replyTo)?.request?.result?.complete(CommandResult.Accepted(payload))
                                 is ErrorPayload -> pending.remove(env.replyTo)?.request?.result?.complete(CommandResult.Rejected(payload))
-                                is SosRequest, is SosClear -> Unit
+                                is SosRequest, is SosClear -> onSos?.invoke(message)
                                 else -> {
                                     val response = send(ErrorPayload(ErrorCode.UNSUPPORTED_TYPE, "Unsupported message type", false), env.id)
                                     history.recordResponse(env.id, Protocol.encode(response))
