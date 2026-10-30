@@ -62,7 +62,7 @@ enum class RobotStatusMissionState(override val wire: String) : WireEnum { IDLE(
 object RobotStatusMissionStateSerializer : WireEnumSerializer<RobotStatusMissionState>("RobotStatusMissionState", RobotStatusMissionState.entries.toTypedArray())
 
 @Serializable(with = RobotStatusTrackingStateSerializer::class)
-enum class RobotStatusTrackingState(override val wire: String) : WireEnum { UNAVAILABLE("unavailable"), SEARCHING("searching"), FOLLOWING("following"), LOST("lost"), ERROR("error"), UNKNOWN("unknown") }
+enum class RobotStatusTrackingState(override val wire: String) : WireEnum { UNAVAILABLE("unavailable"), SEARCHING("searching"), FOLLOWING("following"), LOST("lost"), IDLE("idle"), ERROR("error"), UNKNOWN("unknown") }
 object RobotStatusTrackingStateSerializer : WireEnumSerializer<RobotStatusTrackingState>("RobotStatusTrackingState", RobotStatusTrackingState.entries.toTypedArray())
 
 @Serializable(with = SosRequestReasonSerializer::class)

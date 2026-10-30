@@ -56,6 +56,12 @@ class PayloadCodecTest {
         rejects(mutate("hello", "app_version", JsonPrimitive("가".repeat(6000))))
         assertEquals("UNSUPPORTED_VERSION", assertFailsWith<ProtocolException> { PayloadCodec.decode(mutate("hello", "version", JsonPrimitive(2), false)) }.code)
     }
+    @Test fun idleTrackingStateHasATypedRoundTrip() {
+        val message = PayloadCodec.decode(mutate("robot-status", "tracking_state", JsonPrimitive("idle")))
+        assertEquals(RobotStatusTrackingState.IDLE, (message.payload as RobotStatus).trackingState)
+        assertEquals(message.payload, PayloadCodec.decode(PayloadCodec.encode(message)).payload)
+        PayloadCodec.envelope(message.payload, 0)
+    }
     @Test fun forwardCompatibleEnumsAndTypesDoNotCrash() {
         val status = PayloadCodec.decode(mutate("robot-status", "mission_state", JsonPrimitive("future"))).payload as RobotStatus
         assertEquals(RobotStatusMissionState.UNKNOWN, status.missionState)

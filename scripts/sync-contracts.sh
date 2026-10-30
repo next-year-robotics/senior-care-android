@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # mobile-robot의 계약 정본(software/contracts/phone-bridge)을 이 저장소로 복사한다.
 # 사용: scripts/sync-contracts.sh [정본 contracts 디렉터리]
-#   기본 탐색 순서: ../mobile-robot-care/software/contracts → ../mobile-robot/software/contracts
+#   기본 탐색 순서: ../mobile-robot/software/contracts → ../mobile-robot-care/software/contracts
 # 복사본(contracts/)은 직접 편집하지 않는다. CI가 정본과 diff한다.
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 SRC=${1:-}
 if [ -z "$SRC" ]; then
-  for c in "$ROOT/../mobile-robot-care/software/contracts" "$ROOT/../mobile-robot/software/contracts"; do
+  for c in "$ROOT/../mobile-robot/software/contracts" "$ROOT/../mobile-robot-care/software/contracts"; do
     if [ -d "$c/phone-bridge" ]; then SRC=$(cd "$c" && pwd); break; fi
   done
 fi
