@@ -21,6 +21,8 @@
         android:theme="@style/Theme.SeniorCare"
         android:networkSecurityConfig="@xml/network_security_config">
 
+        <service android:name=".service.BridgeService" android:exported="false" android:foregroundServiceType="location" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

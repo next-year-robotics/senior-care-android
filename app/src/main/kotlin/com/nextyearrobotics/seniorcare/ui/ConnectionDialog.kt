@@ -21,7 +21,7 @@ fun ConnectionDialog(state: SessionState, onConnect: (String?) -> Unit, onDiscon
         Column(Modifier.verticalScroll(rememberScrollState())) {
             Text(stringResource(R.string.foreground_session_notice))
             if (state.needsEndpoint) Text(stringResource(R.string.connection_manual_needed))
-            if (state.error != null) Text(stringResource(R.string.connection_error))
+            if (state.error != null) Text(stringResource(if (state.error == com.nextyearrobotics.seniorcare.protocol.ErrorCode.UNSUPPORTED_VERSION) R.string.connection_update_required else R.string.connection_error))
             state.candidates.forEach { robot -> TextButton(onClick = { onConnect(robot.url); onDismiss() }) { Text(robot.robotId) } }
             OutlinedTextField(value = ip, onValueChange = { ip = it; invalid = false }, label = { Text(stringResource(R.string.connection_ip)) }, singleLine = true)
             OutlinedTextField(value = port, onValueChange = { port = it; invalid = false }, label = { Text(stringResource(R.string.connection_port)) }, singleLine = true)

@@ -41,8 +41,25 @@
     <string name="connection_discover">자동으로 찾기</string>
     <string name="connection_stop">연결 종료</string>
     <string name="connection_error">연결할 수 없어요. 앱과 로봇의 버전 및 연결 권한을 확인해 주세요.</string>
-    <string name="foreground_session_notice">현재는 화면을 켠 상태에서 연결을 시험할 수 있습니다</string>
+    <string name="foreground_session_notice">연결 중에는 화면이 꺼져도 긴급 위치 요청에 응답합니다. 개인 핫스팟 안에서만 연결해 주세요.</string>
     <string name="permissions_title">연결에 필요한 권한</string>
     <string name="permissions_explanation">로봇 연결과 긴급 상황의 위치 전달을 위해 위치·주변 네트워크 권한과 기기의 위치 설정이 필요합니다</string>
     <string name="permissions_settings">위치 설정 열기</string>
+    <string name="notification_connection">로봇 연결 중</string>
+    <string name="notification_sos">SOS · 도움이 필요해요</string>
+    <string name="sos_tracking_lost">로봇이 어르신을 놓쳤어요</string>
+    <string name="sos_stuck">로봇이 움직이지 못하고 있어요</string>
+    <string name="sos_battery">로봇의 배터리가 부족해요</string>
+    <string name="sos_generic">로봇이 도움을 요청했어요</string>
+    <string name="sos_checking">위치를 확인하고 있어요</string>
+    <string name="sos_sent">위치를 보냈어요</string>
+    <string name="sos_low_confidence">오래되었거나 정확도가 낮은 위치를 보냈어요</string>
+    <string name="sos_unavailable">위치를 확인하지 못했어요</string>
+    <string name="sos_not_delivered">위치 전달을 확인하지 못했어요</string>
+    <string name="sos_approximate">정확한 위치 권한이 없어 위치 정확도가 낮을 수 있어요</string>
+    <string name="sos_receipt_notice">로봇에 전달한 상태입니다. 보호자의 확인을 뜻하지는 않아요.</string>
+    <string name="sos_banner">SOS가 진행 중이에요 · 다시 보기</string>
+    <string name="permissions_app_settings">앱 권한 설정 열기</string>
+    <string name="permissions_retry">권한 다시 요청</string>
+    <string name="connection_update_required">앱과 로봇의 버전이 맞지 않아요. 업데이트가 필요합니다.</string>
 </resources>
