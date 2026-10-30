@@ -14,7 +14,7 @@ import kotlin.test.*
 /** Opt in with BRIDGE_TEST_URL against tools/mock-bridge/run.sh --scenario default6. No phone needed. */
 class LiveMockBridgeTest {
     @Test fun defaultSixPlacesStartUndoAndServerConfirmedStop(): Unit = runBlocking {
-        val url = System.getenv("BRIDGE_TEST_URL")
+        val url = System.getenv("BRIDGE_TEST_URL")?.takeIf { it.isNotBlank() }
         assumeTrue("Set BRIDGE_TEST_URL to run the external mock integration", url != null)
         val scope = CoroutineScope(coroutineContext + SupervisorJob())
         val client = OkHttpClient()
