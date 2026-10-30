@@ -11,6 +11,9 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 21 }
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-37.2 build-tools;37.0.0'
+          log-accepted-android-sdk-licenses: false
       - uses: gradle/actions/setup-gradle@v4
       - name: dummy keys (지도 없이도 빌드돼야 한다)
         run: printf 'KAKAO_NATIVE_APP_KEY=dummy\nKAKAO_REST_API_KEY=dummy\n' > local.properties
