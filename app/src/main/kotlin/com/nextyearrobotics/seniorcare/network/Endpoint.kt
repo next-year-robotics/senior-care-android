@@ -1,13 +1,15 @@
 package com.nextyearrobotics.seniorcare.network
 
 import java.net.URI
+import com.nextyearrobotics.seniorcare.BuildConfig
 
 object Endpoint {
-    fun validate(url: String): String {
+    fun validate(url: String, debug: Boolean = BuildConfig.DEBUG): String {
         val uri = URI(url)
         require(uri.scheme in listOf("ws", "wss") && !uri.host.isNullOrBlank())
         require(uri.userInfo == null && uri.query == null && uri.fragment == null)
         require(uri.port in 1..65535 && uri.path == "/bridge/v1")
+        require(uri.scheme != "ws" || CleartextPolicy.allows(uri.host, debug))
         return uri.toASCIIString()
     }
     fun manual(ipv4: String, port: String): String {

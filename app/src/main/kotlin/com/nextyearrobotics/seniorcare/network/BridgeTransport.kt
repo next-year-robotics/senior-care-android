@@ -21,7 +21,8 @@ fun interface TransportFactory { fun connect(endpoint: String): BridgeTransport 
 
 class OkHttpTransportFactory(private val client: OkHttpClient = OkHttpClient.Builder()
     .connectTimeout(2, TimeUnit.SECONDS).readTimeout(0, TimeUnit.MILLISECONDS).build()) : TransportFactory {
-    override fun connect(endpoint: String): BridgeTransport = OkHttpTransport(client, endpoint)
+    override fun connect(endpoint: String): BridgeTransport = OkHttpTransport(
+        client.newBuilder().followRedirects(false).followSslRedirects(false).build(), Endpoint.validate(endpoint))
 }
 private class OkHttpTransport(client: OkHttpClient, endpoint: String) : BridgeTransport {
     private val channel = Channel<SocketEvent>(64)

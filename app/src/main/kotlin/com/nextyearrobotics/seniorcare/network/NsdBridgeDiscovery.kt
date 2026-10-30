@@ -26,12 +26,13 @@ class NsdBridgeDiscovery(private val manager: NsdManager, private val executor: 
                     override fun onServiceUpdated(info: NsdServiceInfo) {
                         val api = info.attributes["api"]?.toString(Charsets.UTF_8)
                         val robot = info.attributes["robot_id"]?.toString(Charsets.UTF_8)
-                        val host = info.hostAddresses.firstOrNull()?.hostAddress
-                        if (api == "1" && !robot.isNullOrBlank() && host != null) {
-                            val literal = if (':' in host) "[$host]" else host
-                            runCatching { Endpoint.validate("ws://$literal:${info.port}/bridge/v1") }.getOrNull()?.let {
-                                found[service.serviceName] = RobotEndpoint(robot, it)
+                        if (api == "1" && !robot.isNullOrBlank()) {
+                            val url = info.hostAddresses.firstNotNullOfOrNull { address ->
+                                val host = address.hostAddress ?: return@firstNotNullOfOrNull null
+                                val literal = if (':' in host) "[$host]" else host
+                                runCatching { Endpoint.validate("ws://$literal:${info.port}/bridge/v1") }.getOrNull()
                             }
+                            if (url != null) found[service.serviceName] = RobotEndpoint(robot, url)
                         }
                     }
                     override fun onServiceLost() { found.remove(service.serviceName) }
