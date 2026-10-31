@@ -2,6 +2,9 @@ package com.nextyearrobotics.seniorcare.location
 
 import com.nextyearrobotics.seniorcare.domain.Clock
 import com.nextyearrobotics.seniorcare.protocol.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /** Ephemeral data only: never persist or log this object. */
 class LocationFix(val lat: Double, val lon: Double, val accuracy: Double, val capturedAtMs: Long, val elapsedMs: Long) {
@@ -17,7 +20,12 @@ interface LocationSource {
     suspend fun fresh(): FixResult
 }
 class LocationCache(private val clock: Clock) {
-    private var latest: LocationFix? = null
+    private val flow = MutableStateFlow<LocationFix?>(null)
+    /** 주행 화면 지도의 내 위치. 메모리에만 있다. */
+    val current: StateFlow<LocationFix?> = flow.asStateFlow()
+    private var latest: LocationFix?
+        get() = flow.value
+        set(value) { flow.value = value }
     fun update(fix: LocationFix) { if (fix.valid() && (latest?.elapsedMs ?: -1) <= fix.elapsedMs) latest = fix }
     fun clear() { latest = null }
     fun message(sosId: String? = null, source: LocationUpdateSource = LocationUpdateSource.CACHE,

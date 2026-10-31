@@ -18,13 +18,14 @@ import com.nextyearrobotics.seniorcare.domain.*
 import com.nextyearrobotics.seniorcare.protocol.SosRequestReason
 
 @Composable
-fun SosOverlay(state: SosState, onDismiss: () -> Unit, onSettings: () -> Unit) {
+fun SosOverlay(state: SosState, onDismiss: () -> Unit, onSettings: () -> Unit, onCancel: () -> Unit) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.errorContainer) {
             Column(Modifier.safeDrawingPadding().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                 Icon(Icons.Default.Warning, null, Modifier.size(56.dp))
                 Text(stringResource(R.string.notification_sos), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
                 Text(stringResource(when (state.request.reason) {
+                    SosRequestReason.MANUAL -> R.string.sos_manual
                     SosRequestReason.TRACKING_LOST -> R.string.sos_tracking_lost
                     SosRequestReason.STUCK -> R.string.sos_stuck
                     SosRequestReason.LOW_BATTERY -> R.string.sos_battery
@@ -40,7 +41,8 @@ fun SosOverlay(state: SosState, onDismiss: () -> Unit, onSettings: () -> Unit) {
                 if (state.approximate) Text(stringResource(R.string.sos_approximate))
                 Text(stringResource(R.string.sos_receipt_notice))
                 Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp)) { Text(stringResource(R.string.action_acknowledge)) }
-                OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp)) { Text(stringResource(R.string.action_settings)) }
+                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp)) { Text(stringResource(R.string.sos_cancel)) }
+                TextButton(onClick = onSettings, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) { Text(stringResource(R.string.action_settings)) }
             }
         }
     }

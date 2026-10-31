@@ -125,4 +125,31 @@
     <string name="map_apply">이 위치로 지정</string>
     <string name="settings_preview_double">글자 200% 미리보기</string>
     <string name="settings_preview_local">화면 시험입니다. 로봇에 명령을 보내지 않습니다.</string>
+    <!-- 2026-11-01 부스 최종: 배터리·SOS 버튼·주행 화면 지도 -->
+    <string name="battery_percent">로봇 배터리 %1$d%%</string>
+    <string name="battery_unknown">로봇 배터리 확인 중</string>
+    <string name="battery_low">배터리가 부족해요. 충전해 주세요</string>
+    <string name="trip_from">%1$s에서 출발</string>
+    <string name="trip_ready_hint">출발을 누르면 로봇이 어르신을 따라와요</string>
+    <string name="trip_depart_sub">로봇이 따라오기 시작해요</string>
+    <string name="trip_stop_sub">로봇을 그 자리에 세워요</string>
+    <string name="tracking_following">로봇이 잘 따라오고 있어요</string>
+    <string name="tracking_searching">로봇이 어르신을 찾고 있어요</string>
+    <string name="tracking_lost">로봇이 어르신을 놓쳤어요. 로봇 앞에 서 주세요</string>
+    <string name="tracking_unavailable">로봇 카메라를 확인하고 있어요</string>
+    <string name="map_my_location">내 위치</string>
+    <string name="map_waiting_location">내 위치를 찾고 있어요</string>
+    <string name="map_off">지도를 띄울 수 없어요</string>
+    <string name="sos_button">SOS 도움 요청</string>
+    <string name="sos_button_sub">보호자에게 위치를 보내요</string>
+    <string name="sos_confirm_title">보호자에게 도움을 요청할까요?</string>
+    <string name="sos_confirm_body">지금 위치와 함께 보호자에게 바로 알림이 가요.</string>
+    <string name="sos_confirm_send">도움 요청 보내기</string>
+    <string name="sos_confirm_cancel">아니요</string>
+    <string name="sos_sending">도움 요청을 보내는 중이에요</string>
+    <string name="sos_manual">도움 요청을 보냈어요</string>
+    <string name="sos_cancel">괜찮아요 · 요청 취소</string>
+    <string name="sos_offline">로봇과 연결되어 있지 않아 보내지 못했어요. 연결을 확인해 주세요.</string>
+    <string name="sos_failed">도움 요청을 보내지 못했어요. 한 번 더 눌러 주세요.</string>
+    <string name="sos_unsupported">로봇이 아직 이 기능을 지원하지 않아요.</string>
 </resources>

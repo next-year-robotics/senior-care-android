@@ -20,12 +20,15 @@ import com.nextyearrobotics.seniorcare.domain.*
 import kotlinx.coroutines.launch
 
 @Composable
-fun HomeScreen(state: AppState, onSelect: (String) -> Unit, onConnect: () -> Unit, onSettings: () -> Unit, onOrigin: () -> Unit) {
+fun HomeScreen(state: AppState, onSelect: (String) -> Unit, onConnect: () -> Unit, onSettings: () -> Unit, onOrigin: () -> Unit,
+               sosBusy: Boolean = false, onSos: (() -> Unit)? = null) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val hint = stringResource(R.string.settings_hint)
     val unavailable = stringResource(R.string.place_disabled)
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { insets ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, bottomBar = {
+        if (onSos != null) Surface(tonalElevation = 3.dp) { SosButton(sosBusy, onSos, Modifier.navigationBarsPadding().padding(16.dp)) }
+    }) { insets ->
         LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize().padding(insets),
             contentPadding = PaddingValues(20.dp), horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -37,6 +40,7 @@ fun HomeScreen(state: AppState, onSelect: (String) -> Unit, onConnect: () -> Uni
                         Connection.STOPPED -> R.string.status_disconnected
                         else -> R.string.status_searching
                     }), Modifier.weight(1f).padding(horizontal = 8.dp), style = MaterialTheme.typography.bodyLarge)
+                    if (state.connection == Connection.READY) BatteryChip(state.batteryPercent)
                     SettingsEntry(onSettings, { scope.launch { snackbar.showSnackbar(hint) } })
                 }
             }
@@ -53,17 +57,7 @@ fun HomeScreen(state: AppState, onSelect: (String) -> Unit, onConnect: () -> Uni
                 ElevatedCard(onClick = { if (place.enabled) onSelect(place.id) else scope.launch { snackbar.showSnackbar(unavailable) } },
                     enabled = state.canEdit, modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp).alpha(if (place.enabled) 1f else .5f)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(when (place.kind) {
-                            "home" -> Icons.Default.Home
-                            "market" -> Icons.Default.Storefront
-                            "mart" -> Icons.Default.ShoppingCart
-                            "senior_center" -> Icons.Default.Groups
-                            "church" -> Icons.Default.Church
-                            "temple" -> Icons.Default.TempleBuddhist
-                            "hospital" -> Icons.Default.LocalHospital
-                            "pharmacy" -> Icons.Default.LocalPharmacy
-                            else -> Icons.Default.Place
-                        }, null, Modifier.size(56.dp))
+                        Icon(placeIcon(place.kind), null, Modifier.size(56.dp))
                         Text(place.label, style = MaterialTheme.typography.titleLarge)
                     }
                 }

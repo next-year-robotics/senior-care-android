@@ -48,6 +48,12 @@ class MainActivity : ComponentActivity() {
             var settings by rememberSaveable { mutableStateOf(false) }
             var permissionInfo by rememberSaveable { mutableStateOf(false) }
             var pendingEndpoint by rememberSaveable { mutableStateOf<String?>(null) }
+            var sosConfirm by rememberSaveable { mutableStateOf(false) }
+            val me by model.myLocation.collectAsStateWithLifecycle()
+            val tripMap = remember { com.nextyearrobotics.seniorcare.places.KakaoTripMap() }
+            // 열린 SOS가 있으면 위 배너가 대신한다
+            val onSos: (() -> Unit)? = if (sos.isEmpty()) ({ sosConfirm = true }) else null
+            LaunchedEffect(ui.screen) { if (ui.screen == Screen.CONFIRM || ui.screen == Screen.TRIP) model.refreshMyLocation() }
             val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
                 if (SessionPermissions.mayConnect(this)) model.connect(pendingEndpoint) else permissionInfo = true
             }
@@ -77,12 +83,15 @@ class MainActivity : ComponentActivity() {
                     { (application as SeniorCareApp).runtime.notifications.testAlert() },
                     { edit.draft?.let { model.mapSelection.open(it); mapInfo = true } }, { settings = false })
                 else when (ui.screen) {
-                    Screen.HOME -> HomeScreen(ui.app, model.trip::select, { connect(null) }, { settings = true }, model.trip::chooseOrigin)
+                    Screen.HOME -> HomeScreen(ui.app, model.trip::select, { connect(null) }, { settings = true }, model.trip::chooseOrigin, ui.sosBusy, onSos)
                     Screen.ORIGIN -> HomeScreen(ui.app, model.trip::setOrigin, { connect(null) }, { settings = true }, model.trip::back)
-                    Screen.CONFIRM, Screen.TRIP -> TripScreen(ui, ui.screen == Screen.CONFIRM, model.trip::startTrip, model.trip::cancelTrip, model.trip::back)
+                    Screen.CONFIRM, Screen.TRIP -> TripScreen(ui, ui.screen == Screen.CONFIRM, tripMap,
+                        me?.let { com.nextyearrobotics.seniorcare.places.MapPoint(it.lat, it.lon) },
+                        model.trip::startTrip, model.trip::cancelTrip, model.trip::back, onSos)
                 }
                 }
                 }
+                if (sosConfirm) SosConfirmDialog({ sosConfirm = false; model.raiseSos() }, { sosConfirm = false })
                 if (connectionDialog) ConnectionDialog(connection, connect, model::disconnect) { connectionDialog = false }
                 if (permissionInfo) AlertDialog(onDismissRequest = { permissionInfo = false }, title = { Text(stringResource(R.string.permissions_title)) }, text = { Column { Text(stringResource(R.string.permissions_explanation)); TextButton(onClick = { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }) { Text(stringResource(R.string.permissions_app_settings)) }; TextButton(onClick = { permissionInfo = false; permissionLauncher.launch(SessionPermissions.required()) }) { Text(stringResource(R.string.permissions_retry)) } } },
                     confirmButton = { TextButton(onClick = { permissionInfo = false; startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }) { Text(stringResource(R.string.permissions_settings)) } },
@@ -93,10 +102,14 @@ class MainActivity : ComponentActivity() {
                         TripNotice.SELECTION_CHANGED -> R.string.trip_selection_changed
                         TripNotice.RESULT_UNKNOWN -> R.string.trip_result_unknown
                         TripNotice.CATALOG_CHANGED -> R.string.trip_catalog_changed
+                        TripNotice.SOS_OFFLINE -> R.string.sos_offline
+                        TripNotice.SOS_FAILED -> R.string.sos_failed
+                        TripNotice.SOS_UNSUPPORTED -> R.string.sos_unsupported
                         else -> R.string.trip_rejected
                     })) }, confirmButton = { TextButton(onClick = model.trip::dismissNotice) { Text(stringResource(R.string.action_acknowledge)) } })
                 sos.values.firstOrNull { !it.dismissed }?.let { active ->
-                    SosOverlay(active, { model.sos.dismiss(active.request.sosId) }, { model.sos.dismiss(active.request.sosId); settings = true })
+                    SosOverlay(active, { model.sos.dismiss(active.request.sosId) }, { model.sos.dismiss(active.request.sosId); settings = true },
+                        { model.sos.dismiss(active.request.sosId); model.cancelSos(active.request.sosId) })
                 }
             }
         }

@@ -74,6 +74,8 @@ class SosCoordinator(private val scope: CoroutineScope, private val source: Loca
         }
     }
     fun dismiss(id: String) { state.value[id]?.let { mutable.value = state.value + (id to it.copy(dismissed = true)) } }
+    /** 로봇이 이미 닫은 SOS(sos.cancel이 INVALID_STATE)를 앱에서도 닫는다. */
+    fun forget(id: String) { if (id in state.value) clear(id) }
     fun reopen(id: String? = null) { mutable.value = state.value.mapValues { (key, value) -> if (id == null || key == id) value.copy(dismissed = false) else value } }
     private fun clear(id: String) {
         freshJobs.remove(id)?.cancel()

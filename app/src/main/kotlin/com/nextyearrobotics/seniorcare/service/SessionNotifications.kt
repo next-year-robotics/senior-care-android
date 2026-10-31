@@ -33,7 +33,7 @@ class SessionNotifications(private val context: Context) : SosAlerts {
     override fun show(state: SosState, first: Boolean) {
         // No coordinates or personal location details on the lock screen.
         val notification = NotificationCompat.Builder(context, SOS).setSmallIcon(R.drawable.ic_launcher)
-            .setContentTitle(context.getString(R.string.notification_sos)).setContentText(context.getString(R.string.sos_generic))
+            .setContentTitle(context.getString(R.string.notification_sos)).setContentText(context.getString(if (state.request.reason == com.nextyearrobotics.seniorcare.protocol.SosRequestReason.MANUAL) R.string.sos_manual else R.string.sos_generic))
             .setContentIntent(open(true)).setOngoing(true).setAutoCancel(false).setOnlyAlertOnce(!first)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH).build()
