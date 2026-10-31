@@ -177,6 +177,22 @@ data class SosAck(
     @SerialName("received") val received: Boolean,
 ) : Payload
 
+@Serializable(with = SosRaiseReasonSerializer::class)
+enum class SosRaiseReason(override val wire: String) : WireEnum { MANUAL("manual"), UNKNOWN("unknown") }
+object SosRaiseReasonSerializer : WireEnumSerializer<SosRaiseReason>("SosRaiseReason", SosRaiseReason.entries.toTypedArray())
+
+/** 2026-11-01: 어르신이 앱 SOS 버튼을 눌렀다. 로봇이 SOS를 열면 sos.request(reason=manual)가 온다. */
+@Serializable
+data class SosRaise(
+    @SerialName("reason") val reason: SosRaiseReason,
+) : Payload
+
+/** 2026-11-01: SOS 화면의 '괜찮아요'. 로봇이 닫으면 sos.clear(resolution=cancelled)가 온다. */
+@Serializable
+data class SosCancel(
+    @SerialName("sos_id") val sosId: String,
+) : Payload
+
 @Serializable
 data class PlaceCatalog(
     @SerialName("revision") val revision: String,

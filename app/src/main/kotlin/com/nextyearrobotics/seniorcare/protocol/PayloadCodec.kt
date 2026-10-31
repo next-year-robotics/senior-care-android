@@ -23,6 +23,8 @@ object PayloadCodec {
             "place.delete" -> Protocol.json.decodeFromJsonElement(PlaceDelete.serializer(), env.payload)
             "location.update" -> Protocol.json.decodeFromJsonElement(LocationUpdate.serializer(), env.payload)
             "sos.ack" -> Protocol.json.decodeFromJsonElement(SosAck.serializer(), env.payload)
+            "sos.raise" -> Protocol.json.decodeFromJsonElement(SosRaise.serializer(), env.payload)
+            "sos.cancel" -> Protocol.json.decodeFromJsonElement(SosCancel.serializer(), env.payload)
             "place.catalog" -> Protocol.json.decodeFromJsonElement(PlaceCatalog.serializer(), env.payload)
             "robot.status" -> Protocol.json.decodeFromJsonElement(RobotStatus.serializer(), env.payload)
             "sos.request" -> Protocol.json.decodeFromJsonElement(SosRequest.serializer(), env.payload)
@@ -46,6 +48,8 @@ object PayloadCodec {
             is PlaceDelete -> "place.delete" to Protocol.json.encodeToJsonElement(PlaceDelete.serializer(), payload).jsonObject
             is LocationUpdate -> "location.update" to Protocol.json.encodeToJsonElement(LocationUpdate.serializer(), payload).jsonObject
             is SosAck -> "sos.ack" to Protocol.json.encodeToJsonElement(SosAck.serializer(), payload).jsonObject
+            is SosRaise -> "sos.raise" to Protocol.json.encodeToJsonElement(SosRaise.serializer(), payload).jsonObject
+            is SosCancel -> "sos.cancel" to Protocol.json.encodeToJsonElement(SosCancel.serializer(), payload).jsonObject
             is PlaceCatalog -> "place.catalog" to Protocol.json.encodeToJsonElement(PlaceCatalog.serializer(), payload).jsonObject
             is RobotStatus -> "robot.status" to Protocol.json.encodeToJsonElement(RobotStatus.serializer(), payload).jsonObject
             is SosRequest -> "sos.request" to Protocol.json.encodeToJsonElement(SosRequest.serializer(), payload).jsonObject
@@ -75,6 +79,8 @@ object PayloadCodec {
             is PlaceDelete -> Protocol.json.encodeToJsonElement(PlaceDelete.serializer(), payload).jsonObject
             is LocationUpdate -> Protocol.json.encodeToJsonElement(LocationUpdate.serializer(), payload).jsonObject
             is SosAck -> Protocol.json.encodeToJsonElement(SosAck.serializer(), payload).jsonObject
+            is SosRaise -> Protocol.json.encodeToJsonElement(SosRaise.serializer(), payload).jsonObject
+            is SosCancel -> Protocol.json.encodeToJsonElement(SosCancel.serializer(), payload).jsonObject
             is PlaceCatalog -> Protocol.json.encodeToJsonElement(PlaceCatalog.serializer(), payload).jsonObject
             is RobotStatus -> Protocol.json.encodeToJsonElement(RobotStatus.serializer(), payload).jsonObject
             is SosRequest -> Protocol.json.encodeToJsonElement(SosRequest.serializer(), payload).jsonObject

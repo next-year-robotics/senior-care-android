@@ -16,7 +16,7 @@ class PayloadCodecTest {
     }
     private fun rejects(text: String) = assertEquals("INVALID_MESSAGE", assertFailsWith<ProtocolException> { PayloadCodec.decode(text) }.code)
 
-    @Test fun all26FixturesHaveTypedRoundTripsAndCanBeSent() {
+    @Test fun allFixturesHaveTypedRoundTripsAndCanBeSent() {
         val types = mutableSetOf<String>()
         dir.listFiles()!!.filter { it.extension == "json" }.forEach { file ->
             val message = PayloadCodec.decode(file.readText())
@@ -26,7 +26,7 @@ class PayloadCodecTest {
             assertEquals(message.payload, PayloadCodec.decode(Protocol.encode(PayloadCodec.envelope(message.payload, e.sentAtMs, e.replyTo, e.id))).payload)
             types += e.type
         }
-        assertEquals(16, types.size)
+        assertEquals(18, types.size)
     }
     @Test fun everyRequiredFieldIncludingNullableFieldsMustBePresent() {
         val schema = Protocol.json.parseToJsonElement(File("../contracts/phone-bridge/v1/schema/messages.schema.json").readText()).jsonObject.getValue("\$defs").jsonObject
