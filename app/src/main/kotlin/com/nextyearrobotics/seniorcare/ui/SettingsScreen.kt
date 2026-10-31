@@ -46,7 +46,8 @@ fun SettingsScreen(connection: SessionState, editor: PlaceEditor, edit: PlaceEdi
                 CompositionLocalProvider(LocalDensity provides Density(density.density, if (doubleFont) 2f else density.fontScale)) {
                     if (previewPage == TripPage.HOME) HomeScreen(app, { destination = it; previewPage = TripPage.CONFIRM }, {}, {}, {})
                     else TripScreen(TripUiState(app = app, screen = previewPage), previewPage == TripPage.CONFIRM,
-                        { previewPage = TripPage.TRIP }, { previewPage = TripPage.HOME }, { previewPage = TripPage.HOME })
+                        com.nextyearrobotics.seniorcare.places.NoTripMap, null,
+                        { previewPage = TripPage.TRIP }, { previewPage = TripPage.HOME }, { previewPage = TripPage.HOME }, null)
                 }
             }
         }

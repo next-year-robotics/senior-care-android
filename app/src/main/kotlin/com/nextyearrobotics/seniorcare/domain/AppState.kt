@@ -3,7 +3,10 @@ package com.nextyearrobotics.seniorcare.domain
 enum class Connection { STOPPED, DISCOVERING, CONNECTING, SYNCING, READY, RECONNECTING }
 enum class Mission { UNKNOWN, IDLE, STARTING, ACTIVE, CANCELLING, CANCELLED, ARRIVED, ERROR }
 enum class TripPhase { READY, START_PENDING, ACTIVE, CANCELLING, ARRIVED, UNKNOWN }
-data class Destination(val id: String, val kind: String, val label: String, val enabled: Boolean, val sortOrder: Long)
+enum class Tracking { UNKNOWN, UNAVAILABLE, IDLE, SEARCHING, FOLLOWING, LOST, ERROR }
+/** lat/lon은 주행 화면 지도에 목적지 핀을 찍는 데만 쓴다(명세: 홈 화면에는 좌표를 보이지 않는다). */
+data class Destination(val id: String, val kind: String, val label: String, val enabled: Boolean, val sortOrder: Long,
+                       val lat: Double? = null, val lon: Double? = null)
 data class Sos(val id: String, val reason: String, val dismissed: Boolean = false)
 
 data class AppState(
@@ -19,6 +22,8 @@ data class AppState(
     val nowMs: Long = 0,
     val resultUnknown: Boolean = false,
     val sos: Map<String, Sos> = emptyMap(),
+    val batteryPercent: Int? = null,
+    val tracking: Tracking = Tracking.UNKNOWN,
 ) {
     val stale: Boolean get() = connection != Connection.READY || statusAtMs?.let { nowMs - it >= 5_000 } != false
     val canEdit: Boolean get() = connection == Connection.READY && phase == TripPhase.READY && !stale
@@ -34,7 +39,8 @@ sealed interface AppEvent {
     data object Disconnected : AppEvent
     data object Stop : AppEvent
     data class Catalog(val places: List<Destination>, val defaultOrigin: String?) : AppEvent
-    data class Status(val mission: Mission, val tripId: String?, val atMs: Long) : AppEvent
+    data class Status(val mission: Mission, val tripId: String?, val atMs: Long,
+                      val batteryPercent: Int? = null, val tracking: Tracking = Tracking.UNKNOWN) : AppEvent
     data class Select(val id: String?) : AppEvent
     data class Origin(val id: String) : AppEvent
     data object RequestStart : AppEvent
@@ -60,6 +66,7 @@ fun reduce(state: AppState, event: AppEvent): AppState {
             originId = state.originId?.takeIf { id -> event.places.any { it.id == id && it.enabled } } ?: event.defaultOrigin,
             destinationId = state.destinationId?.takeIf { id -> event.places.any { it.id == id && it.enabled } })
         is AppEvent.Status -> state.copy(mission = event.mission, tripId = event.tripId, statusAtMs = event.atMs, nowMs = event.atMs,
+            batteryPercent = event.batteryPercent, tracking = event.tracking,
             resultUnknown = false, phase = when (event.mission) {
                 Mission.IDLE, Mission.CANCELLED -> TripPhase.READY
                 Mission.STARTING -> TripPhase.START_PENDING

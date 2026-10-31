@@ -15,6 +15,14 @@ class AppStateTest {
         assertEquals(Connection.READY, s.connection)
         assertEquals("market", s.catalog.first().id)
     }
+    @Test fun statusCarriesBatteryAndTracking() {
+        var s = reduce(ready(), AppEvent.Status(Mission.ACTIVE, "t", 200, 55, Tracking.FOLLOWING))
+        assertEquals(55, s.batteryPercent)
+        assertEquals(Tracking.FOLLOWING, s.tracking)
+        s = reduce(s, AppEvent.Status(Mission.IDLE, null, 300))
+        assertNull(s.batteryPercent)
+        assertEquals(Tracking.UNKNOWN, s.tracking)
+    }
     @Test fun duplicateStartAndSameDestinationAreBlocked() {
         var s = reduce(ready(), AppEvent.Select("home"))
         assertFalse(s.canStart)

@@ -3,6 +3,7 @@ package com.nextyearrobotics.seniorcare.network
 
 import com.nextyearrobotics.seniorcare.data.TripRepository
 import com.nextyearrobotics.seniorcare.data.TripScreen
+import com.nextyearrobotics.seniorcare.data.TripNotice
 import com.nextyearrobotics.seniorcare.domain.TripPhase
 import com.nextyearrobotics.seniorcare.domain.Clock
 import com.nextyearrobotics.seniorcare.domain.Connection
@@ -194,6 +195,27 @@ class BridgeSessionTest {
         assertEquals(TripPhase.CANCELLING, repository.state.value.app.phase)
         t.deliver((fixture("robot-status") as RobotStatus).copy(missionState = RobotStatusMissionState.CANCELLED)); runCurrent()
         assertEquals(TripScreen.HOME, repository.state.value.screen)
+        session.stop()
+    }
+    @Test fun sosButtonSendsRaiseAndOldServerIsUnsupported() = runTest {
+        val (session, transports) = setup()
+        val clock = object : Clock { override fun monotonicMs() = testScheduler.currentTime; override fun epochMs() = 0L }
+        val repository = TripRepository(session, backgroundScope, clock)
+        val t = ready(session, transports)
+        repository.raiseSos(); repository.raiseSos(); runCurrent()
+        assertEquals(1, t.sent.count { it.payload is SosRaise })
+        assertTrue(repository.state.value.sosBusy)
+        t.deliver(Ack(AckStatus.ACCEPTED), t.sent.last().envelope.id); runCurrent()
+        assertFalse(repository.state.value.sosBusy)
+        assertEquals(TripNotice.NONE, repository.state.value.notice)
+        repository.raiseSos(); runCurrent()
+        t.deliver(ErrorPayload(ErrorCode.UNSUPPORTED_TYPE, "unsupported", false), t.sent.last().envelope.id); runCurrent()
+        assertEquals(TripNotice.SOS_UNSUPPORTED, repository.state.value.notice)
+        var forgotten: String? = null
+        repository.cancelSos("835fcafe-60ac-4517-9f06-50bcd2486b6c") { forgotten = it }; runCurrent()
+        assertEquals(SosCancel("835fcafe-60ac-4517-9f06-50bcd2486b6c"), t.sent.last().payload)
+        t.deliver(ErrorPayload(ErrorCode.INVALID_STATE, "not active", false), t.sent.last().envelope.id); runCurrent()
+        assertEquals("835fcafe-60ac-4517-9f06-50bcd2486b6c", forgotten)
         session.stop()
     }
     @Test fun urgentSosDuringSyncAndBlockedCommandAckIsNotRequired() = runTest {

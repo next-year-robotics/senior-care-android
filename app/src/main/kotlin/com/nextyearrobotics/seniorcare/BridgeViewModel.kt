@@ -34,6 +34,18 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
     val connection = runtime.session.state
     val sos = runtime.sos
     val permissionProblem = runtime.permissionProblem
+    val myLocation = runtime.cache.current
+    /** 주행 화면을 열 때 한 번. 30 s 주기 갱신을 기다리지 않고 지도에 내 위치를 띄운다. */
+    fun refreshMyLocation() {
+        if (runtime.source.failure() != null) return
+        viewModelScope.launch {
+            try { withTimeoutOrNull(15_000) { runtime.source.fresh() }?.fix?.let(runtime.cache::update) }
+            catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { }
+        }
+    }
+    fun raiseSos() = trip.raiseSos()
+    fun cancelSos(id: String) = trip.cancelSos(id, runtime.sos::forget)
     fun connect(endpoint: String? = null) {
         try {
             ContextCompat.startForegroundService(getApplication(), Intent(getApplication(), BridgeService::class.java).putExtra("endpoint", endpoint))

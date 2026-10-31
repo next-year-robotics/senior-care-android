@@ -8,10 +8,12 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 enum class TripScreen { HOME, CONFIRM, TRIP, ORIGIN }
-enum class TripNotice { NONE, SAME_PLACE, SELECTION_CHANGED, RESULT_UNKNOWN, REJECTED, CATALOG_CHANGED }
+enum class TripNotice { NONE, SAME_PLACE, SELECTION_CHANGED, RESULT_UNKNOWN, REJECTED, CATALOG_CHANGED,
+    SOS_OFFLINE, SOS_FAILED, SOS_UNSUPPORTED }
 data class TripUiState(
     val app: AppState = AppState(), val screen: TripScreen = TripScreen.HOME,
     val busy: Boolean = false, val undoUntilMs: Long? = null, val notice: TripNotice = TripNotice.NONE,
+    val sosBusy: Boolean = false,
 ) { val canUndo get() = undoUntilMs?.let { app.nowMs < it } == true && app.tripId != null && app.phase in listOf(TripPhase.ACTIVE, TripPhase.START_PENDING) }
 
 /** Joins the transport and domain reducer; UI never talks to the socket directly. */
@@ -36,7 +38,7 @@ class TripRepository(private val session: BridgeSession, private val scope: Coro
                     val followsDefault = app.originId == catalog?.defaultOriginPlaceId
                     catalog = current.catalog
                     app = reduce(app, AppEvent.Catalog(current.catalog.places.map {
-                        Destination(it.id, it.kind.wire, it.label, it.enabled, it.sortOrder)
+                        Destination(it.id, it.kind.wire, it.label, it.enabled, it.sortOrder, it.lat, it.lon)
                     }, current.catalog.defaultOriginPlaceId))
                     if (followsDefault) app = app.copy(originId = current.catalog.defaultOriginPlaceId)
                     if (before != null && app.destinationId == null && ui.screen == TripScreen.CONFIRM)
@@ -44,7 +46,9 @@ class TripRepository(private val session: BridgeSession, private val scope: Coro
                 }
                 if (current.status != null && (current.statusAtMs != previous.statusAtMs || current.status != previous.status)) {
                     val status = current.status
-                    app = reduce(app, AppEvent.Status(Mission.entries.firstOrNull { it.name == status.missionState.name } ?: Mission.UNKNOWN, status.tripId, current.statusAtMs ?: clock.monotonicMs()))
+                    app = reduce(app, AppEvent.Status(Mission.entries.firstOrNull { it.name == status.missionState.name } ?: Mission.UNKNOWN, status.tripId, current.statusAtMs ?: clock.monotonicMs(),
+                        status.batteryPercent?.takeIf { it.isFinite() && it in 0.0..100.0 }?.toInt(),
+                        Tracking.entries.firstOrNull { it.name == status.trackingState.name } ?: Tracking.UNKNOWN))
                     if (status.missionState in listOf(RobotStatusMissionState.STARTING, RobotStatusMissionState.ACTIVE, RobotStatusMissionState.CANCELLING, RobotStatusMissionState.ARRIVED)) {
                         app = app.copy(originId = status.fromPlaceId, destinationId = status.toPlaceId)
                         if (status.missionState == RobotStatusMissionState.ARRIVED && handledArrival == status.tripId)
@@ -108,6 +112,30 @@ class TripRepository(private val session: BridgeSession, private val scope: Coro
                 is CommandResult.Rejected -> rejected(latest, latestResult.error.code)
                 else -> uncertain(latest)
             }
+        }
+    }
+    /** 앱 SOS 버튼(sos.raise). 로봇이 SOS를 열면 sos.request가 와서 SOS 화면이 뜬다. 앱이 SOS를 직접 만들지 않는다. */
+    fun raiseSos() {
+        val ui = state.value
+        if (ui.sosBusy) return
+        if (ui.app.connection != Connection.READY) { mutable.value = ui.copy(notice = TripNotice.SOS_OFFLINE); return }
+        mutable.value = ui.copy(sosBusy = true)
+        scope.launch {
+            val result = session.request(SosRaise(SosRaiseReason.MANUAL))
+            val latest = state.value
+            mutable.value = latest.copy(sosBusy = false, notice = when (result) {
+                is CommandResult.Accepted -> latest.notice
+                is CommandResult.Rejected -> if (result.error.code == ErrorCode.UNSUPPORTED_TYPE) TripNotice.SOS_UNSUPPORTED else TripNotice.SOS_FAILED
+                CommandResult.NotConnected -> TripNotice.SOS_OFFLINE
+                CommandResult.Unknown -> TripNotice.SOS_FAILED
+            })
+        }
+    }
+    /** SOS 화면의 '괜찮아요'(sos.cancel). 로봇에 그 SOS가 이미 없으면(INVALID_STATE) 앱에서도 닫는다. */
+    fun cancelSos(id: String, forget: (String) -> Unit) {
+        scope.launch {
+            val result = session.request(SosCancel(id))
+            if (result is CommandResult.Rejected && result.error.code == ErrorCode.INVALID_STATE) forget(id)
         }
     }
     private fun uncertain(ui: TripUiState) = ui.copy(app = reduce(ui.app, AppEvent.CommandUncertain), busy = false, screen = TripScreen.TRIP, notice = TripNotice.RESULT_UNKNOWN)

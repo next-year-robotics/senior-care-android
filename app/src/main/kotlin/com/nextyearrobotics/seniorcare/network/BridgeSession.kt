@@ -75,7 +75,8 @@ class BridgeSession(
         mutableState.value = mutableState.value.copy(connection = Connection.STOPPED, needsEndpoint = false, candidates = emptyList())
     }
     suspend fun request(payload: Payload, replyTo: String? = null): CommandResult {
-        require(payload is TripStart || payload is TripCancel || payload is PlaceUpsert || payload is PlaceDelete || payload is SosAck || payload is LocationUpdate)
+        require(payload is TripStart || payload is TripCancel || payload is PlaceUpsert || payload is PlaceDelete || payload is SosAck || payload is LocationUpdate ||
+            payload is SosRaise || payload is SosCancel)
         if (state.value.connection != Connection.READY) return CommandResult.NotConnected
         val result = CompletableDeferred<CommandResult>()
         if (requests.trySend(Request(payload, replyTo, result)).isFailure) return CommandResult.NotConnected
